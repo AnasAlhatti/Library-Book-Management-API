@@ -7,7 +7,6 @@ Session 4 assignment built with Express 5, TypeScript, and Zod. Books are stored
 Requires Node.js 22.13+ and npm.
 
 ```powershell
-cd "D:\coding\Core Istanbul\Backend\Library Book Management API"
 npm ci
 Copy-Item .env.example .env
 npm run dev
