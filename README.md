@@ -4,13 +4,41 @@ Session 4 assignment built with Express 5, TypeScript, and Zod. Books are stored
 
 ## Run locally
 
-Requires Node.js 22.13+ and npm.
+Install Git and Node.js 22.13 or later, including npm. A database is not required.
+
+Clone the repository and install its dependencies. These commands work in PowerShell, macOS Terminal, and Linux shells.
+
+```sh
+git clone https://github.com/AnasAlhatti/Library-Book-Management-API.git
+cd Library-Book-Management-API
+npm ci
+```
+
+Create your local configuration from the example file.
+
+On Windows PowerShell
 
 ```powershell
-npm ci
 Copy-Item .env.example .env
+```
+
+On macOS or Linux
+
+```sh
+cp .env.example .env
+```
+
+Start the development server from the repository directory.
+
+```sh
 npm run dev
 ```
+
+Keep that terminal open. The server should print `Library Book Management API listening on http://localhost:3001`.
+
+Open `http://localhost:3001/books` in a browser or send a GET request to it from Postman. A freshly started server returns HTTP 200 with `[]`. Book endpoints use the `/books` path. Opening `http://localhost:3001/` returns a JSON 404 error.
+
+Press Ctrl+C in the server terminal to stop the app. Restarting, including automatic development restarts after source changes, clears the in-memory data.
 
 The server uses `http://localhost:3001`. Set `PORT` in `.env` to change the port and restart the server. Both `dev` and `start` load `.env` using Node's built-in environment file support. An existing shell `PORT` takes precedence. If `.env` is absent, the default port is 3001. `.env` is ignored by Git and `.env.example` provides the configuration template.
 
@@ -20,6 +48,14 @@ The server uses `http://localhost:3001`. Set `PORT` in `.env` to change the port
 | `npm run typecheck` | Check strict TypeScript types |
 | `npm run build` | Compile ESM JavaScript into `dist` |
 | `npm start` | Run the compiled server after building |
+
+To check the project and run the compiled application, stop the development server first, then run these commands from the repository directory.
+
+```sh
+npm run typecheck
+npm run build
+npm start
+```
 
 ## Structure
 
@@ -68,7 +104,7 @@ IDs start at 1 and increase for each new book. Deleting a book does not reuse it
 
 Send `Content-Type: application/json` for POST and PATCH.
 
-Example POST body
+In Postman, select POST, enter `http://localhost:3001/books`, then select Body → raw → JSON and send this body.
 
 ```json
 {
@@ -79,11 +115,15 @@ Example POST body
 }
 ```
 
-Example PATCH body
+Expect HTTP 201, a Location header such as `/books/1`, and a response containing `id`, `title`, `author`, `genre`, and `available`. The first book created after starting the server has ID 1.
+
+Copy the returned ID and use it in subsequent URLs. For a book with ID 1, send GET `http://localhost:3001/books/1` to retrieve it. Send PATCH to that same URL with this body to update its availability.
 
 ```json
 { "available": false }
 ```
+
+Expect HTTP 200 with the updated book. Send DELETE to that same URL to remove it. Successful deletion returns HTTP 204 with an empty body. A later GET for that ID returns HTTP 404.
 
 PATCH accepts any nonempty subset of title, author, genre, and available. Omitted fields preserve their previous values. POST and PATCH reject unknown fields, including client-supplied IDs.
 
@@ -95,6 +135,8 @@ PATCH accepts any nonempty subset of title, author, genre, and available. Omitte
 - 500 for unexpected errors, with details logged on the server.
 
 Validation errors include field details.
+
+To check validation manually, POST `{"title":"Incomplete"}` to `/books` using a JSON body. Expect HTTP 400 with `"error": "Validation failed"` and details for the missing fields. The following response illustrates a blank-title validation error.
 
 ```json
 {
@@ -116,7 +158,7 @@ PATCH /books/<book-id>
 ## Test with Postman
 
 1. Start the server with `npm run dev` and keep the terminal open.
-2. Open the Postman desktop app and import `library-books.postman_collection.json` from this folder.
+2. Open the Postman desktop app and import [library-books.postman_collection.json](library-books.postman_collection.json) from the repository directory.
 3. The collection variable `baseUrl` defaults to `http://localhost:3001`. Update it if you changed the port.
 4. Run the collection in order using the collection runner. The Create book request saves its ID into the collection variable `bookId` for subsequent requests.
 5. Check the request responses, test results, and server terminal logs.
@@ -151,7 +193,18 @@ To repeat the collection checks from another terminal while the app runs on port
 npm exec --yes --package=newman -- newman run library-books.postman_collection.json
 ```
 
-Newman is downloaded into the npm cache when needed. It is separate from the API's dependencies.
+Newman is downloaded into the npm cache when needed. It is separate from the API's dependencies. If you changed the server port to 4000, append `--env-var baseUrl=http://localhost:4000` to the Newman command.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| `node` or `npm` is not recognized | Install Node.js and reopen the terminal |
+| Node reports an unknown environment-file option | Check `node --version` and use Node.js 22.13 or later |
+| `npm start` cannot find `dist/server.js` | Run `npm run build` first |
+| Server reports `EADDRINUSE` | Stop the other process using the port, or change PORT in .env and restart |
+| Postman cannot connect | Start the server and match the request URL or collection baseUrl to the port printed in the server terminal |
+| GET `/books/1` returns 404 | Create a book and use its returned ID, since restarting clears all books |
 
 ## AI use
 
